@@ -244,6 +244,25 @@ const MachineConfigList = ({
                 </Row>
           },
         }}*/
+        tableProps={{
+          onRow: (item) => ({
+            onDoubleClick: () =>
+              router.push(
+                /* item.type === 'folder'
+                  ? `/${space.spaceId}/machine-config/folder/${item.id}`
+                  : `/${space.spaceId}/machine-config/${item.id}`, */
+                `/${space.spaceId}/machine-config/${item.id}`,
+              ),
+            /* onContextMenu: () => {
+              if (selection.includes(item.id)) {
+                setContextMenuItem(selectedElements);
+              } else {
+                setSelectionElements([item]);
+                setContextMenuItem([item]);
+              }
+            }, */
+          }),
+        }}
       />
       <AddUserControls name={'machineconfig-list'} />
     </>
