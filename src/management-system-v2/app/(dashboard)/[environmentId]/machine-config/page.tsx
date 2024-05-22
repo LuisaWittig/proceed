@@ -28,6 +28,7 @@ const MachineConfigPage = async ({
             params={{
               environmentId: params.environmentId,
             }}
+            folder={folder}
             data={folderContents}
           />
           {/* <Processes processes={folderContents} favourites={favs as string[]} folder={folder} /> */}

@@ -20,6 +20,18 @@ import SpaceLink from '@/components/space-link';
 import { FolderOutlined as FolderFilled, FileOutlined as FileFilled } from '@ant-design/icons';
 import { deleteMachineConfigs } from '@/lib/data/legacy/machine-config';
 import { Folder } from '@/lib/data/folder-schema';
+import {
+  deleteFolder,
+  moveIntoFolder,
+  updateFolder as updateFolderServer,
+} from '@/lib/data/folders';
+
+import AddUserControls from '@/components/add-user-controls';
+import { toCaslResource } from '@/lib/ability/caslAbility';
+import FolderModal from '@/components/folder-modal';
+import { useAddControlCallback } from '@/lib/controls-store';
+import useFavouritesStore, { useInitialiseFavourites } from '@/lib/useFavouriteProcesses';
+import Ability from '@/lib/ability/abilityHelper';
 
 import AddUserControls from '@/components/add-user-controls';
 import { useAddControlCallback } from '@/lib/controls-store';
@@ -32,9 +44,11 @@ export type MachineConfigListConfigs = ReplaceKeysWithHighlighted<
 
 const MachineConfigList = ({
   data,
+  folder,
   params,
 }: {
   data: InputItem[];
+  folder: Folder;
   params: {
     environmentId: string;
   };
