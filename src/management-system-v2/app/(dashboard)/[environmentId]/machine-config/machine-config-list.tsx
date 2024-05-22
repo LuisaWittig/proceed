@@ -82,7 +82,7 @@ const MachineConfigList = ({
     const machineConfigPromise = deleteMachineConfigs(machineConfigIds, space.spaceId);
     if (machineConfigPromise) promises.push(machineConfigPromise);
 
-    await Promise.allSettled(promises);
+  //   await Promise.allSettled(promises);
 
     const machineConfigsResult = await machineConfigPromise;
 
@@ -93,9 +93,9 @@ const MachineConfigList = ({
       });
     }
 
-    setSelectedRowElements([]);
-    router.refresh();
-  }
+  //   setSelectedRowElements([]);
+  //   router.refresh();
+  // }
 
   if (ability && ability.can('create', 'MachineConfig'))
     defaultDropdownItems.push({
@@ -258,25 +258,6 @@ const MachineConfigList = ({
                 </Row>
           },
         }}*/
-        tableProps={{
-          onRow: (item) => ({
-            onDoubleClick: () =>
-              router.push(
-                /* item.type === 'folder'
-                  ? `/${space.spaceId}/machine-config/folder/${item.id}`
-                  : `/${space.spaceId}/machine-config/${item.id}`, */
-                `/${space.spaceId}/machine-config/${item.id}`,
-              ),
-            /* onContextMenu: () => {
-              if (selection.includes(item.id)) {
-                setContextMenuItem(selectedElements);
-              } else {
-                setSelectionElements([item]);
-                setContextMenuItem([item]);
-              }
-            }, */
-          }),
-        }}
       />
       <AddUserControls name={'machineconfig-list'} />
     </>
