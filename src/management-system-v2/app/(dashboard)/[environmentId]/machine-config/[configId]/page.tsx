@@ -15,6 +15,9 @@ import ConfigContent from './config-content';
 
 import { Breadcrumb, Input, Button } from 'antd';
 import { Col, Divider, Row } from 'antd';
+import TextArea from 'antd/es/input/TextArea';
+import { MachineConfig } from '@/lib/data/machine-config-schema';
+import { userError } from '@/lib/user-error';
 
 type MachineConfigProps = {
   params: { configId: string; environmentId: string };
