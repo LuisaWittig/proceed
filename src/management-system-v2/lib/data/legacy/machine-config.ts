@@ -15,6 +15,8 @@ import { v4 } from 'uuid';
 import eventHandler from './eventHandler.js';
 import { toCaslResource } from '@/lib/ability/caslAbility';
 
+//TODO: remove process specific functionality and "process" references from this file
+
 // @ts-ignore
 let firstInit = !global.machineConfigMetaObjects;
 
