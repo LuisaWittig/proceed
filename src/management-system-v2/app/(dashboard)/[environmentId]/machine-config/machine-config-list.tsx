@@ -27,11 +27,8 @@ import {
 } from '@/lib/data/folders';
 
 import AddUserControls from '@/components/add-user-controls';
-import { toCaslResource } from '@/lib/ability/caslAbility';
 import FolderModal from '@/components/folder-modal';
 import { useAddControlCallback } from '@/lib/controls-store';
-import useFavouritesStore, { useInitialiseFavourites } from '@/lib/useFavouriteProcesses';
-import Ability from '@/lib/ability/abilityHelper';
 
 import AddUserControls from '@/components/add-user-controls';
 import { useAddControlCallback } from '@/lib/controls-store';
@@ -82,7 +79,7 @@ const MachineConfigList = ({
     const machineConfigPromise = deleteMachineConfigs(machineConfigIds, space.spaceId);
     if (machineConfigPromise) promises.push(machineConfigPromise);
 
-  //   await Promise.allSettled(promises);
+    await Promise.allSettled(promises);
 
     const machineConfigsResult = await machineConfigPromise;
 
@@ -93,9 +90,9 @@ const MachineConfigList = ({
       });
     }
 
-  //   setSelectedRowElements([]);
-  //   router.refresh();
-  // }
+    setSelectedRowElements([]);
+    router.refresh();
+  }
 
   if (ability && ability.can('create', 'MachineConfig'))
     defaultDropdownItems.push({
@@ -115,6 +112,10 @@ const MachineConfigList = ({
   );
   useAddControlCallback('machineconfig-list', 'esc', () => setSelectedRowElements([]));
   useAddControlCallback('machineconfig-list', 'del', () => setOpenDeleteModal(true));
+
+  function deleteHandle() {
+    deleteItems(selectedRowElements).then((res) => {});
+  }
 
   function deleteHandle() {
     deleteItems(selectedRowElements).then((res) => {});
