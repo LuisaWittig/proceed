@@ -17,6 +17,32 @@ type VariablesEditorProps = {
   backendCreateMachineConfig: Function;
 };
 
+function defaultMachineConfig() {
+  const date = new Date().toUTCString();
+  return {
+    id: v4(),
+    type: 'machine-config',
+    environmentId: '',
+    owner: '',
+    name: 'Default Machine Configuration',
+    description: '',
+    variables: [],
+    departments: [],
+    inEditingBy: [],
+    createdOn: date,
+    lastEdited: date,
+    sharedAs: 'protected',
+    shareTimestamp: 0,
+    allowIframeTimestamp: 0,
+    versions: [],
+    folderId: '',
+    targetConfigs: [],
+    machineConfigs: [],
+  } as MachineConfig;
+}
+
+const LATEST_VERSION = { version: -1, name: 'Latest Version', description: '' };
+
 export default function MachineConfigEditor(props: VariablesEditorProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [selectedConfig, setSelectedConfig] = useState<
