@@ -36,7 +36,13 @@ const MachineConfigPage = async ({
     params.folderId ? decodeURIComponent(params.folderId) : rootFolder.id,
   );
   const folderContents = (await asyncMap(
-    getFolderChildren(folder.id, ability, ['machine-config', 'product-spec', 'folder']),
+    getFolderChildren(folder.id, ability, [
+      'machine-config',
+      'product-spec',
+      'config',
+      'target-config',
+      'folder',
+    ]),
     async (item) => {
       if (item.type === 'folder') {
         return {
