@@ -41,11 +41,9 @@ export type MachineConfigListConfigs = ReplaceKeysWithHighlighted<
 
 const MachineConfigList = ({
   data,
-  folder,
   params,
 }: {
   data: InputItem[];
-  folder: Folder;
   params: {
     environmentId: string;
   };
