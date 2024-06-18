@@ -114,15 +114,7 @@ export function getFolderChildren(folderId: string, ability?: Ability) {
   if (ability && !ability.can('view', toCaslResource('Folder', folderData.folder)))
     throw new Error('Permission denied');
 
-  console.log('pasta 1:', folderData);
-  let result = folderData.children;
-  if (filterTypes && filterTypes.length > 0) {
-    result = folderData.children.filter(function (element) {
-      return filterTypes.includes(element.type);
-    });
-  }
-  console.log('pasta 2:', folderData);
-  return result;
+  return folderData.children;
 }
 
 export function createFolder(folderInput: FolderInput, ability?: Ability) {
