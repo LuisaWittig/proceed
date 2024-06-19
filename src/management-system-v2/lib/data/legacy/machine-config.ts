@@ -116,6 +116,7 @@ export async function createMachineConfig(
         name: 'Default Machine Configuration',
         description: '',
         variables: [],
+        parameters: [],
         departments: [],
         inEditingBy: [],
         createdOn: date,
