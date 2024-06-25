@@ -32,10 +32,7 @@ export type MachineConfigMetadata = Prettify<
   WithRequired<MachineConfigServerInput, 'id' | 'name' | 'folderId'> & {
     targetConfigs: MachineConfigMetadata[];
     machineConfigs: MachineConfigMetadata[];
-<<<<<<< HEAD
     parameters: MachineConfigParameter[];
-=======
->>>>>>> d221a407 (feat: initial treeview for editor)
   } & VersionedObject<'machine-config' | 'config' | 'target-config' | 'product-spec'>
 >;
 
