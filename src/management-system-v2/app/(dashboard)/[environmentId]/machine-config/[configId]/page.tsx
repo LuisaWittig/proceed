@@ -8,11 +8,6 @@ import {
   saveMachineConfig,
 } from '@/lib/data/legacy/machine-config';
 //import { toCaslResource } from '@/lib/ability/caslAbility';
-import { Breadcrumb, Input, Button, Form } from 'antd';
-import { Col, Divider, Row } from 'antd';
-import MachineConfigEditor from './machine-config-editor';
-import ConfigContent from './config-content';
-
 import { Breadcrumb, Input, Button } from 'antd';
 import { Col, Divider, Row } from 'antd';
 import MachineConfigEditor from './machine-config-editor';

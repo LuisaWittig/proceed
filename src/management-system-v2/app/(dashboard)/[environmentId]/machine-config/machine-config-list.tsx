@@ -24,9 +24,6 @@ import { Folder } from '@/lib/data/folder-schema';
 import AddUserControls from '@/components/add-user-controls';
 import { useAddControlCallback } from '@/lib/controls-store';
 
-import AddUserControls from '@/components/add-user-controls';
-import { useAddControlCallback } from '@/lib/controls-store';
-
 type InputItem = MachineConfigMetadata;
 export type MachineConfigListConfigs = ReplaceKeysWithHighlighted<
   InputItem,
@@ -104,10 +101,6 @@ const MachineConfigList = ({
   );
   useAddControlCallback('machineconfig-list', 'esc', () => setSelectedRowElements([]));
   useAddControlCallback('machineconfig-list', 'del', () => setOpenDeleteModal(true));
-
-  function deleteHandle() {
-    deleteItems(selectedRowElements).then((res) => {});
-  }
 
   function deleteHandle() {
     deleteItems(selectedRowElements).then((res) => {});

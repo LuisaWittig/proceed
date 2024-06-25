@@ -128,6 +128,7 @@ export async function defaultMachineConfig() {
     folderId: '',
     targetConfigs: [],
     machineConfigs: [],
+    parameters: [],
   } as MachineConfig;
 }
 
