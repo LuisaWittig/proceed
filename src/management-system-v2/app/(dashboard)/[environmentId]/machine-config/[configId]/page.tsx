@@ -16,6 +16,7 @@ import ConfigContent from './config-content';
 import { Breadcrumb, Input, Button } from 'antd';
 import { Col, Divider, Row } from 'antd';
 import MachineConfigEditor from './machine-config-editor';
+import ConfigContent from './config-content';
 
 type MachineConfigProps = {
   params: { configId: string; environmentId: string };
