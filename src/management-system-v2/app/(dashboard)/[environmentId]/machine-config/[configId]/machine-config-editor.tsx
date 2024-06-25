@@ -31,7 +31,10 @@ export default function MachineConfigEditor(props: VariablesEditorProps) {
     setSelectedConfig({ parent: machineConfig, selection: machineConfig });
   }, []);
 
-  const onSelectConfig = (relation: { parent: MachineConfig; selection: MachineConfig }) => {
+  const onSelectConfig = (relation: {
+    parent: MachineConfig;
+    selection: MachineConfig;
+  }) => {
     setSelectedConfig(relation);
   };
 

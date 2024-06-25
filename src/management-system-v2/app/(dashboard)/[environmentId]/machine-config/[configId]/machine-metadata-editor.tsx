@@ -1,6 +1,9 @@
 'use client';
 
-import { MachineConfig, MachineConfigParameter } from '@/lib/data/machine-config-schema';
+import {
+  MachineConfig,
+  MachineConfigParameter,
+} from '@/lib/data/machine-config-schema';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import {
@@ -14,7 +17,14 @@ import {
   UserOutlined,
   DeleteOutlined,
   CopyOutlined,
+  ColumnWidthOutlined,
 } from '@ant-design/icons';
+import { ResizableBox } from 'react-resizable';
+import { Resizable } from 're-resizable';
+import 'react-resizable/css/styles.css';
+
+import styles from './ResizableBox.module.scss'; //Handle CSS
+
 import TextArea from 'antd/es/input/TextArea';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -40,10 +50,11 @@ import { useEnvironment } from '@/components/auth-can';
 import { defaultMachineConfig, findInTree } from './machine-tree-view';
 import { Content, Header } from 'antd/es/layout/layout';
 import Title from 'antd/es/typography/Title';
-
 type MachineDataViewProps = {
   configId: string;
-  selectedMachineConfig: { parent: MachineConfig; selection: MachineConfig } | undefined;
+  selectedMachineConfig:
+    | { parent: MachineConfig; selection: MachineConfig }
+    | undefined;
   rootMachineConfig: MachineConfig;
   backendSaveMachineConfig: Function;
 };
@@ -71,12 +82,14 @@ export default function MachineDataEditor(props: MachineDataViewProps) {
     editingMachineConfig.id,
     rootMachineConfig,
     rootMachineConfig,
-    0,
+    0
   );
   const saveMachineConfig = props.backendSaveMachineConfig;
   const configId = props.configId;
   const selectedVersionId = query.get('version');
-  const [nestedParameters, setNestedParameters] = useState<MachineConfigParameter[]>([]); // State for nested parameters
+  const [nestedParameters, setNestedParameters] = useState<
+    MachineConfigParameter[]
+  >([]); // State for nested parameters
 
   //Added by Antoni
   const {
@@ -113,10 +126,12 @@ export default function MachineDataEditor(props: MachineDataViewProps) {
 
   const selectedVersion =
     editingMachineConfig.versions.find(
-      (version) => version.version === parseInt(selectedVersionId ?? '-1'),
+      (version) => version.version === parseInt(selectedVersionId ?? '-1')
     ) ?? LATEST_VERSION;
   const filterOption: SelectProps['filterOption'] = (input, option) =>
-    ((option?.label as string) ?? '').toLowerCase().includes(input.toLowerCase());
+    ((option?.label as string) ?? '')
+      .toLowerCase()
+      .includes(input.toLowerCase());
 
   const createConfigVersion = async (values: {
     versionName: string;
@@ -148,7 +163,9 @@ export default function MachineDataEditor(props: MachineDataViewProps) {
 
   const saveDescription = (e: any) => {
     if (refEditingMachineConfig) {
-      refEditingMachineConfig.selection.description = description ? description : '';
+      refEditingMachineConfig.selection.description = description
+        ? description
+        : '';
       saveMachineConfig(configId, rootMachineConfig).then(() => {});
       router.refresh();
     }
@@ -161,7 +178,8 @@ export default function MachineDataEditor(props: MachineDataViewProps) {
     }
     setName(editingMachineConfig.name);
     setDescription(editingMachineConfig.description);
-    if (refEditingMachineConfig) setNestedParameters(refEditingMachineConfig.selection.parameters);
+    if (refEditingMachineConfig)
+      setNestedParameters(refEditingMachineConfig.selection.parameters);
   }, [props.selectedMachineConfig]);
 
   const showMobileView = useMobileModeler();
@@ -172,10 +190,25 @@ export default function MachineDataEditor(props: MachineDataViewProps) {
     // }
     setEditingName(!editingName);
   };
+  const [width, setWidth] = useState(window.innerWidth / 2);
+
+  const handleResize = (delta: number) => {
+    setWidth((prevWidth) => {
+      const newWidth = prevWidth + delta;
+      const maxWidth = window.innerWidth * 0.8;
+      const minWidth = window.innerWidth * 0.2;
+      return Math.min(Math.max(newWidth, minWidth), maxWidth);
+    });
+  };
   return (
     <Layout>
       <Header
-        style={{ background: '#fff', padding: '0 16px', display: 'flex', alignItems: 'center' }}
+        style={{
+          background: '#fff',
+          padding: '0 16px',
+          display: 'flex',
+          alignItems: 'center',
+        }}
       >
         <Divider orientation="left" style={{ margin: '0 16px' }}>
           <Title level={3} style={{ margin: 0 }}>
@@ -210,15 +243,16 @@ export default function MachineDataEditor(props: MachineDataViewProps) {
                 onSelect={(_, option) => {
                   // change the version info in the query but keep other info (e.g. the currently open subprocess)
                   const searchParams = new URLSearchParams(query);
-                  if (!option.value || option.value === -1) searchParams.delete('version');
+                  if (!option.value || option.value === -1)
+                    searchParams.delete('version');
                   else searchParams.set(`version`, `${option.value}`);
                   router.push(
                     spaceURL(
                       environment,
                       `/machine-config/${configId as string}${
                         searchParams.size ? '?' + searchParams.toString() : ''
-                      }`,
-                    ),
+                      }`
+                    )
                   );
                 }}
                 options={[LATEST_VERSION]
@@ -261,13 +295,21 @@ export default function MachineDataEditor(props: MachineDataViewProps) {
               {parentMachineConfig.id !== editingMachineConfig.id ? (
                 <>
                   Parent:
-                  <Input value={parentMachineConfig.id} disabled prefix={<KeyOutlined />} />
+                  <Input
+                    value={parentMachineConfig.id}
+                    disabled
+                    prefix={<KeyOutlined />}
+                  />
                 </>
               ) : (
                 ''
               )}
               ID:
-              <Input value={editingMachineConfig.id} disabled prefix={<KeyOutlined />} />
+              <Input
+                value={editingMachineConfig.id}
+                disabled
+                prefix={<KeyOutlined />}
+              />
               Owner:
               <Input
                 value={editingMachineConfig.owner.split('|').pop()}
@@ -294,9 +336,62 @@ export default function MachineDataEditor(props: MachineDataViewProps) {
             <Button icon={<PlusOutlined />} type="dashed" />
           </Space>
         </Card>
-        <Row gutter={16} style={{ marginTop: '16px' }}>
-          <Col span={24}>
-            <Card title="Parameters" bodyStyle={{ paddingBottom: 16 }}>
+        <div
+          style={{
+            display: 'flex',
+            position: 'relative',
+          }}
+        >
+          <ResizableBox
+            className="custom-box"
+            width={width}
+            height={Infinity}
+            axis="x"
+            handle={
+              <ColumnWidthOutlined
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  right: -8,
+                  cursor: 'col-resize',
+                }}
+                onMouseDown={(e) => {
+                  const startX = e.clientX;
+                  const onMouseMove = (event: MouseEvent) => {
+                    handleResize(event.clientX - startX);
+                    e.clientX = event.clientX;
+                  };
+                  const onMouseUp = () => {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                  };
+                  document.addEventListener('mousemove', onMouseMove);
+                  document.addEventListener('mouseup', onMouseUp);
+                }}
+              />
+            }
+            handleSize={[8, 8]}
+            resizeHandles={['e']}
+            style={{
+              border: '1px solid #ddd',
+              padding: '16px',
+              background: '#fff',
+              borderRadius: '8px',
+              flex: '1 1 auto',
+              display: 'flex',
+              flexDirection: 'column',
+              position: 'relative',
+              overflow: 'auto',
+            }}
+          >
+            <Card
+              title="Parameters"
+              bodyStyle={{
+                paddingBottom: 16,
+                maxHeight: '600px',
+                overflowY: 'auto',
+              }}
+            >
               <Button
                 icon={<PlusOutlined />}
                 type="dashed"
@@ -305,6 +400,7 @@ export default function MachineDataEditor(props: MachineDataViewProps) {
               >
                 Add Parameter
               </Button>
+
               {nestedParameters.map((param, i) => (
                 <Card
                   key={i}
@@ -324,32 +420,36 @@ export default function MachineDataEditor(props: MachineDataViewProps) {
                       <Input
                         placeholder="Key"
                         value={param.key}
-                        onChange={(e) => changeNestedParameter(i, 'key', e.target.value)}
-                        onBlur={saveParameters}
+                        onChange={(e) =>
+                          changeNestedParameter(i, 'key', e.target.value)
+                        }
                       />
                     </Col>
                     <Col span={6}>
                       <Input
                         placeholder="Value"
                         value={param.value}
-                        onChange={(e) => changeNestedParameter(i, 'value', e.target.value)}
-                        onBlur={saveParameters}
+                        onChange={(e) =>
+                          changeNestedParameter(i, 'value', e.target.value)
+                        }
                       />
                     </Col>
                     <Col span={6}>
                       <Input
                         placeholder="Unit"
                         value={param.unit}
-                        onChange={(e) => changeNestedParameter(i, 'unit', e.target.value)}
-                        onBlur={saveParameters}
+                        onChange={(e) =>
+                          changeNestedParameter(i, 'unit', e.target.value)
+                        }
                       />
                     </Col>
                     <Col span={6}>
                       <Input
                         placeholder="Language"
                         value={param.language}
-                        onChange={(e) => changeNestedParameter(i, 'language', e.target.value)}
-                        onBlur={saveParameters}
+                        onChange={(e) =>
+                          changeNestedParameter(i, 'language', e.target.value)
+                        }
                       />
                     </Col>
                   </Row>
@@ -381,8 +481,151 @@ export default function MachineDataEditor(props: MachineDataViewProps) {
                 </Card>
               ))}
             </Card>
-          </Col>
-        </Row>
+          </ResizableBox>
+          <ResizableBox
+            className="custom-box"
+            width={window.innerWidth - width}
+            height={Infinity}
+            axis="x"
+            minConstraints={[window.innerWidth * 0.2, 0]}
+            maxConstraints={[window.innerWidth * 0.8, Infinity]}
+            handle={
+              <ColumnWidthOutlined
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: -8,
+                  cursor: 'col-resize',
+                }}
+                onMouseDown={(e) => {
+                  const startX = e.clientX;
+                  const onMouseMove = (event: MouseEvent) => {
+                    handleResize(startX - event.clientX);
+                    e.clientX = event.clientX;
+                  };
+                  const onMouseUp = () => {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                  };
+                  document.addEventListener('mousemove', onMouseMove);
+                  document.addEventListener('mouseup', onMouseUp);
+                }}
+              />
+            }
+            handleSize={[8, 8]}
+            resizeHandles={['w']}
+            style={{
+              border: '1px solid #ddd',
+              padding: '16px',
+              background: '#fff',
+              borderRadius: '8px',
+              flex: '1 1 auto',
+              display: 'flex',
+              flexDirection: 'column',
+              position: 'relative',
+              maxHeight: 'calc(100vh - 160px)', // Adjust based on your layout
+              overflow: 'auto',
+            }}
+          >
+            <Card
+              title="Machine Configuration"
+              bodyStyle={{
+                paddingBottom: 16,
+                maxHeight: '600px',
+                overflowY: 'auto',
+              }}
+            >
+              <Button
+                icon={<PlusOutlined />}
+                type="dashed"
+                style={{ width: '100%', marginBottom: 16 }}
+                onClick={addNestedParameter}
+              >
+                Add Parameter
+              </Button>
+
+              {nestedParameters.map((param, i) => (
+                <Card
+                  key={i}
+                  type="inner"
+                  title={`Nested Parameter ${i + 1}`}
+                  extra={
+                    <Button
+                      icon={<MinusOutlined />}
+                      type="dashed"
+                      onClick={() => removeNestedParameter(i)}
+                    />
+                  }
+                  style={{ marginBottom: 16 }}
+                >
+                  <Row gutter={16} style={{ marginBottom: 16 }}>
+                    <Col span={6}>
+                      <Input
+                        placeholder="Key"
+                        value={param.key}
+                        onChange={(e) =>
+                          changeNestedParameter(i, 'key', e.target.value)
+                        }
+                      />
+                    </Col>
+                    <Col span={6}>
+                      <Input
+                        placeholder="Value"
+                        value={param.value}
+                        onChange={(e) =>
+                          changeNestedParameter(i, 'value', e.target.value)
+                        }
+                      />
+                    </Col>
+                    <Col span={6}>
+                      <Input
+                        placeholder="Unit"
+                        value={param.unit}
+                        onChange={(e) =>
+                          changeNestedParameter(i, 'unit', e.target.value)
+                        }
+                      />
+                    </Col>
+                    <Col span={6}>
+                      <Input
+                        placeholder="Language"
+                        value={param.language}
+                        onChange={(e) =>
+                          changeNestedParameter(i, 'language', e.target.value)
+                        }
+                      />
+                    </Col>
+                  </Row>
+                  <Row gutter={16} style={{ marginBottom: 16 }}>
+                    <Col span={24}>
+                      <Space>
+                        <Tag color="purple">Key XY</Tag>
+                        <Tag color="blue">Key AB</Tag>
+                        <Button icon={<PlusOutlined />} type="dashed" />
+                      </Space>
+                    </Col>
+                  </Row>
+                  <Row gutter={16} justify="start">
+                    <Space>
+                      <Tooltip title="Copy">
+                        <Button icon={<CopyOutlined />} shape="circle" />
+                      </Tooltip>
+                      <Tooltip title="Edit">
+                        <Button icon={<EditOutlined />} shape="circle" />
+                      </Tooltip>
+                      <Tooltip title="Delete">
+                        <Button icon={<DeleteOutlined />} shape="circle" />
+                      </Tooltip>
+                    </Space>
+                    <Button type="link" icon={<PlusOutlined />}>
+                      Create Custom Parameter
+                    </Button>
+                  </Row>
+                </Card>
+              ))}
+            </Card>
+          </ResizableBox>
+        </div>
       </Content>
     </Layout>
   );
