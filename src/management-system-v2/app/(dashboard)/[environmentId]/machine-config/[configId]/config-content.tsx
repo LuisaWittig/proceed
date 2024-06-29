@@ -3,10 +3,11 @@
 import { ParentConfig } from '@/lib/data/machine-config-schema';
 
 import { MenuUnfoldOutlined, MenuFoldOutlined } from '@ant-design/icons';
-import { useEffect, useRef, useState } from 'react';
-import { Button, Layout, Typography } from 'antd';
-import ConfigurationTreeView from './machine-tree-view';
-import MachineDataEditor from './machine-metadata-editor';
+import { useEffect, useState } from 'react';
+import { Button, Layout } from 'antd';
+import ConfigEditor from './config-editor';
+import ConfigurationTreeView, { TreeFindStruct } from './machine-tree-view';
+import { useRouter } from 'next/navigation';
 
 const { Sider } = Layout;
 
@@ -14,25 +15,31 @@ type VariablesEditorProps = {
   configId: string;
   originalParentConfig: ParentConfig;
   backendSaveParentConfig: Function;
-  backendCreateParentConfig: Function;
 };
 
-export default function ParentConfigEditor(props: VariablesEditorProps) {
+export default function ConfigContent(props: VariablesEditorProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const [selectedConfig, setSelectedConfig] = useState<
-    { parent: ParentConfig; selection: ParentConfig } | undefined
-  >(undefined);
+  const [lastUpdate, setLastUpdate] = useState<string>('');
+  const router = useRouter();
+  const [selectedConfig, setSelectedConfig] = useState<TreeFindStruct>(undefined);
 
   const configId = props.configId;
-  const saveParentConfig = props.backendSaveParentConfig;
-  const machineConfig = { ...props.originalParentConfig };
+  const saveConfig = props.backendSaveParentConfig;
+  const [parentConfig, setParentConfig] = useState<ParentConfig>(props.originalParentConfig);
 
   useEffect(() => {
-    setSelectedConfig({ parent: machineConfig, selection: machineConfig });
+    setSelectedConfig({ parent: parentConfig, selection: parentConfig });
   }, []);
 
-  const onSelectConfig = (relation: { parent: ParentConfig; selection: ParentConfig }) => {
+  const onSelectConfig = (relation: TreeFindStruct) => {
     setSelectedConfig(relation);
+  };
+
+  const treeOnUpdate = (editedConfig: ParentConfig) => {
+    const date = new Date().toUTCString();
+    router.refresh();
+    setLastUpdate(date);
+    setParentConfig(editedConfig);
   };
 
   return (
@@ -48,10 +55,11 @@ export default function ParentConfigEditor(props: VariablesEditorProps) {
           {!collapsed && (
             <>
               <ConfigurationTreeView
+                onUpdate={treeOnUpdate}
                 onSelectConfig={onSelectConfig}
-                backendSaveParentConfig={saveParentConfig}
+                backendSaveParentConfig={saveConfig}
                 configId={configId}
-                parentConfig={machineConfig}
+                parentConfig={parentConfig}
               />
             </>
           )}
@@ -63,10 +71,10 @@ export default function ParentConfigEditor(props: VariablesEditorProps) {
         onClick={() => setCollapsed(!collapsed)}
         style={{ fontSize: '24px' }}
       />
-      <MachineDataEditor
-        backendSaveConfig={saveParentConfig}
+      <ConfigEditor
+        backendSaveParentConfig={saveConfig}
         configId={configId}
-        parentConfig={machineConfig}
+        parentConfig={parentConfig}
         selectedConfig={selectedConfig}
       />
     </Layout>
