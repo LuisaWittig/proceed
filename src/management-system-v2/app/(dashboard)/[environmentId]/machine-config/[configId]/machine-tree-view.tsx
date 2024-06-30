@@ -6,14 +6,20 @@ import {
   ConfigParameter,
   TargetConfig,
 } from '@/lib/data/machine-config-schema';
-import { Dropdown, Input, MenuProps, Modal, Tag, Tree, TreeDataNode } from 'antd';
+import { Dropdown, Input, MenuProps, Modal, Tag, Tree, TreeDataNode, Button, Tooltip } from 'antd';
 import { EventDataNode } from 'antd/es/tree';
 import { useRouter } from 'next/navigation';
 import { Key, useEffect, useRef, useState } from 'react';
 import { v3, v4 } from 'uuid';
 import TextArea from 'antd/es/input/TextArea';
 import { useEnvironment } from '@/components/auth-can';
-
+import {
+  FullscreenOutlined,
+  FullscreenExitOutlined,
+  MinusOutlined,
+  DownOutlined,
+  UpOutlined,
+} from '@ant-design/icons';
 type ConfigurationTreeViewProps = {
   configId: string;
   parentConfig: ParentConfig;
@@ -148,6 +154,27 @@ export default function ConfigurationTreeView(props: ConfigurationTreeViewProps)
   const [description, setDescription] = useState<string>('');
   const [selectedMachineConfig, setSelectedMachineConfig] = useState<TreeFindStruct>(undefined);
 
+  const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
+
+  const getAllKeys = (data: TreeDataNode[]): React.Key[] => {
+    let keys: React.Key[] = [];
+    data.forEach((item) => {
+      keys.push(item.key);
+      if (item.children) {
+        keys = keys.concat(getAllKeys(item.children));
+      }
+    });
+    return keys;
+  };
+
+  const expandAllNodes = () => {
+    setExpandedKeys(getAllKeys(treeData));
+  };
+
+  const collapseAllNodes = () => {
+    setExpandedKeys([]);
+  };
+
   const changeName = (e: any) => {
     let newName = e.target.value;
     setName(newName);
@@ -195,12 +222,6 @@ export default function ConfigurationTreeView(props: ConfigurationTreeViewProps)
   };
 
   const showCreateParameterModal = (e: any) => {
-    // let type = e.key.replace('create-', '');
-    // if (type === 'target') {
-    //   setMachineType('target-config');
-    // } else {
-    //   setMachineType('machine-config');
-    // }
     setCreateParameterOpen(true);
     setParameterKey('');
     setParameterLanguage('');
@@ -267,21 +288,19 @@ export default function ConfigurationTreeView(props: ConfigurationTreeViewProps)
   ) => {
     setSelectedOnTree(selectedKeys);
     let foundMachine: TreeFindStruct = { parent: parentConfig, selection: parentConfig };
-    // Check if it is not the parent config
     if (selectedKeys.length !== 0 && selectedKeys.indexOf(parentConfig.id) === -1) {
       const [_configId, _configType] = selectedKeys[0].toString().split('|', 2);
-      //Then search the right one
       let ref = findConfig(_configId, parentConfig);
       if (ref !== undefined) foundMachine = ref;
     }
     setSelectedMachineConfig(foundMachine);
     props.onSelectConfig(foundMachine);
   };
+
   const onRightClickTreeNode = (info: {
     event: React.MouseEvent;
     node: EventDataNode<TreeDataNode>;
   }) => {
-    // Lets fix to only one selection for now
     const machineId = info.node.key;
     setSelectedOnTree([machineId]);
     let foundMachine: TreeFindStruct = { parent: parentConfig, selection: parentConfig };
@@ -384,7 +403,6 @@ export default function ConfigurationTreeView(props: ConfigurationTreeViewProps)
   };
 
   const createTarget = () => {
-    // We can only have one target configuration
     if (parentConfig.targetConfig) return;
     let foundMachine = parentConfig;
     foundMachine.targetConfig = {
@@ -495,7 +513,6 @@ export default function ConfigurationTreeView(props: ConfigurationTreeViewProps)
     ];
     if (selectedOnTree.length <= 0) return parentConfigContextMenu;
     const [_configId, _configType] = selectedOnTree[0].toString().split('|', 2);
-    // if the selected item is the target configuration
     if (
       _configType === 'target-config' ||
       _configType === 'machine-config' ||
@@ -538,7 +555,14 @@ export default function ConfigurationTreeView(props: ConfigurationTreeViewProps)
 
   return (
     <>
-      <br />
+      <div style={{ display: 'flex', gap: '8px', padding: '8px' }}>
+        <Tooltip title="Expand All">
+          <Button icon={<FullscreenOutlined />} onClick={expandAllNodes} />
+        </Tooltip>
+        <Tooltip title="Collapse All">
+          <Button icon={<FullscreenExitOutlined />} onClick={collapseAllNodes} />
+        </Tooltip>
+      </div>
       <Dropdown menu={{ items: mountContextMenu() }} trigger={['contextMenu']}>
         <Tree
           selectedKeys={selectedOnTree}
@@ -546,6 +570,8 @@ export default function ConfigurationTreeView(props: ConfigurationTreeViewProps)
           onSelect={onSelectTreeNode}
           loadData={onLoadData}
           treeData={treeData}
+          expandedKeys={expandedKeys}
+          onExpand={(keys) => setExpandedKeys(keys)}
         />
       </Dropdown>
       <Modal
