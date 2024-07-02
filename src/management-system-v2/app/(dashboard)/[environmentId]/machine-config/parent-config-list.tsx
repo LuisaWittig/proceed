@@ -2,26 +2,38 @@
 
 import styles from '@/components/item-list-view.module.scss';
 
-import { Button, Grid, Dropdown, TableColumnsType } from 'antd';
+import { Button, Grid, Dropdown, TableColumnsType, Tooltip, Form, Input, Row } from 'antd';
 import { FileOutlined } from '@ant-design/icons';
 import { AiOutlinePlus } from 'react-icons/ai';
 import { useAbilityStore } from '@/lib/abilityStore';
 import Bar from '@/components/bar';
 import SelectionActions from '@/components/selection-actions';
-import { useState } from 'react';
-import { ParentConfigMetadata } from '@/lib/data/machine-config-schema';
+import { useCallback, useState } from 'react';
+import { useColumnWidth } from '@/lib/useColumnWidth';
+import { MachineConfig, ParentConfigMetadata } from '@/lib/data/machine-config-schema';
 import useFuzySearch, { ReplaceKeysWithHighlighted } from '@/lib/useFuzySearch';
 import ElementList from '@/components/item-list-view';
 import { useRouter } from 'next/navigation';
-import { useEnvironment } from '@/components/auth-can';
+import { generateDateString } from '@/lib/utils';
+import { AuthCan, useEnvironment } from '@/components/auth-can';
 import MachineConfigCreationButton from '@/components/machine-config-creation-button';
 import { App } from 'antd';
 import SpaceLink from '@/components/space-link';
-import { FolderOutlined as FolderFilled, FileOutlined as FileFilled } from '@ant-design/icons';
+import {
+  ExportOutlined,
+  CopyOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  FolderOutlined as FolderFilled,
+  FileOutlined as FileFilled,
+} from '@ant-design/icons';
 import { deleteParentConfigurations } from '@/lib/data/legacy/machine-config';
 
 import AddUserControls from '@/components/add-user-controls';
 import { useAddControlCallback } from '@/lib/controls-store';
+import ConfirmationButton from '@/components/confirmation-button';
+import { useUserPreferences } from '@/lib/user-preferences';
+import MachineConfigModal from '@/components/machine-config-modal';
 
 type InputItem = ParentConfigMetadata;
 export type ParentConfigListConfigs = ReplaceKeysWithHighlighted<InputItem, 'name' | 'description'>;
@@ -50,11 +62,16 @@ const ParentConfigList = ({
   });
 
   const { message } = App.useApp();
-
+  const [openExportModal, setOpenExportModal] = useState(false);
   const [selectedRowElements, setSelectedRowElements] = useState<ParentConfigListConfigs[]>([]);
+  const [copySelection, setCopySelection] = useState<ParentConfigListConfigs[]>([]);
+  const [openCopyModal, setOpenCopyModal] = useState(false);
+  const [openEditModal, setOpenEditModal] = useState(false);
+  const [editingItem, setEditingItem] = useState<ParentConfigListConfigs | null>(null);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const selectedRowKeys = selectedRowElements.map((element) => element.id);
-
+  const [form] = Form.useForm();
+  const [configs, setConfigs] = useState<MachineConfig[]>(data as unknown as MachineConfig[]);
   const ability = useAbilityStore((state) => state.ability);
   const defaultDropdownItems = [];
 
@@ -98,10 +115,129 @@ const ParentConfigList = ({
   useAddControlCallback('machineconfig-list', 'esc', () => setSelectedRowElements([]));
   useAddControlCallback('machineconfig-list', 'del', () => setOpenDeleteModal(true));
 
+  // for export machine-config
+  const exportItems = (items: ParentConfigListConfigs[]) => {
+    const dataToExport = items.map((item) => ({
+      id: item.id,
+      name: item.name.value,
+      description: item.description.value,
+      type: item.type,
+      lastEdited: item.lastEdited,
+      createdOn: item.createdOn,
+    }));
+
+    const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = 'exported_items.json';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+  const actionBarGenerator = useCallback(
+    (record: any) => {
+      const resource = record.type === 'folder' ? { Folder: record } : { Process: record };
+
+      return (
+        <>
+          {record.type !== 'folder' && (
+            <AuthCan {...resource} create>
+              <Tooltip placement="top" title={'Copy'}>
+                <CopyOutlined
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    copyItem([record]);
+                  }}
+                />
+              </Tooltip>
+            </AuthCan>
+          )}
+
+          {record.type !== 'folder' && (
+            <Tooltip placement="top" title={'Export'}>
+              <ExportOutlined onClick={() => exportItems([record])} />
+            </Tooltip>
+          )}
+
+          <AuthCan {...resource} update>
+            <Tooltip placement="top" title={'Edit'}>
+              <EditOutlined onClick={() => editItem(record)} />
+            </Tooltip>
+          </AuthCan>
+
+          <AuthCan delete {...resource}>
+            <Tooltip placement="top" title={'Delete'}>
+              <ConfirmationButton
+                title={`Delete ${record.type === 'folder' ? 'Folder' : 'Process'}`}
+                description="Are you sure you want to delete the selected process?"
+                onConfirm={() => deleteItems([record])}
+                buttonProps={{
+                  icon: <DeleteOutlined />,
+                  type: 'text',
+                }}
+              />
+            </Tooltip>
+          </AuthCan>
+        </>
+      );
+    },
+    [copyItem, deleteItems, editItem, exportItems],
+  );
+
   function deleteHandle() {
     deleteItems(selectedRowElements).then((res) => {});
   }
 
+  async function copyProcesses(configs: MachineConfig[], spaceId: string) {
+    try {
+      // Simulate an API call to copy the machine configurations.
+      const newConfigs = configs.map((config) => ({
+        ...config,
+        id: `copy-${Math.random().toString(36).substr(2, 9)}`, // Simulate new ID generation
+        name: `${config.name} (Copy)`,
+        createdOn: new Date().toISOString(),
+        lastEditedOn: new Date().toISOString(),
+        lastEditedBy: 'user-id', // Placeholder, adjust accordingly
+      }));
+
+      // Append new configs to the existing list
+      setConfigs((prevConfigs) => [...prevConfigs, ...newConfigs]);
+      return {};
+    } catch (error) {
+      return { error: new Error('Failed to copy processes') };
+    }
+  }
+
+  async function updateProcesses(configs: MachineConfig[], spaceId: string) {
+    try {
+      // Simulate an API call to update the machine configurations.
+      setConfigs((prevConfigs) =>
+        prevConfigs.map((config) => {
+          const updatedConfig = configs.find((c) => c.id === config.id);
+          return updatedConfig ? { ...config, ...updatedConfig } : config;
+        }),
+      );
+      return {};
+    } catch (error) {
+      return { error: new Error('Failed to update processes') };
+    }
+  }
+
+  function copyItem(items: ParentConfigListConfigs[]) {
+    setCopySelection(items);
+    setOpenCopyModal(true);
+  }
+
+  function editItem(item: ParentConfigListConfigs) {
+    setEditingItem(item);
+    setSelectedRowElements([item]);
+    setOpenEditModal(true);
+  }
+
+  const addPreferences = useUserPreferences.use.addPreferences();
+  const selectedColumns = useUserPreferences.use['columns-in-table-view-process-list']();
   const columns: TableColumnsType<ParentConfigListConfigs> = [
     {
       title: 'Name',
@@ -146,6 +282,7 @@ const ParentConfigList = ({
       // sorter: (a, b) => a.name.value.localeCompare(b.name.value),
       render: (_, record) => (
         <SpaceLink
+          // href={`/machine-config/${record.id}`}
           href={`/machine-config/${record.id}`}
           style={{
             color: 'inherit' /* or any color you want */,
@@ -164,7 +301,62 @@ const ParentConfigList = ({
       ),
       responsive: ['sm'],
     },
+    {
+      title: 'Last Edited',
+      dataIndex: 'lastEdited',
+      key: 'Last Edited',
+      render: (date: Date) => generateDateString(date, true),
+      responsive: ['md'],
+    },
+    {
+      title: 'Config Type',
+      dataIndex: 'ConfigType',
+      key: 'Config Type',
+      render: (_, record) => <>{record.type}</>,
+      responsive: ['sm'],
+    },
+    {
+      title: 'Machine Type',
+      dataIndex: 'MachineType',
+      key: 'Machine Type',
+      render: (_, record) => <>{record.type}</>,
+      responsive: ['sm'],
+    },
   ];
+  const processListColumnsMobile = [
+    'Favorites',
+    'Name',
+    'Description',
+    'Last Edited',
+    'Meta Data Button',
+  ];
+  let columnsFiltered = breakpoint.xl
+    ? columns.filter((c) => selectedColumns.map((col: any) => col.name).includes(c?.key as string))
+    : columns.filter((c) => processListColumnsMobile.includes(c?.key as string));
+
+  columnsFiltered = useColumnWidth(columnsFiltered, 'columns-in-table-view-process-list', [
+    'Favorites',
+  ]);
+
+  const handleCopy = async (values: { name: string; description: string }[]) => {
+    const res = await copyProcesses(values, space.spaceId);
+    if (res?.error) {
+      message.open({ type: 'error', content: res.error.message });
+    } else {
+      setOpenCopyModal(false);
+      router.refresh();
+    }
+  };
+
+  const handleEdit = async (values: { name: string; description: string }[]) => {
+    const res = await updateProcesses(values, space.spaceId);
+    if (res?.error) {
+      message.open({ type: 'error', content: res.error.message });
+    } else {
+      setOpenEditModal(false);
+      router.refresh();
+    }
+  };
 
   return (
     <>
@@ -187,9 +379,31 @@ const ParentConfigList = ({
             </span>
             <SelectionActions count={selectedRowKeys.length}>
               {/* <Button style={{ marginLeft: '4px' }}>Create Folder with Selection</Button> */}
-              <Button onClick={deleteHandle} style={{ marginLeft: '4px' }}>
+              {/* <Button onClick={deleteHandle} style={{ marginLeft: '4px' }}>
                 Delete Selected Items
-              </Button>
+              </Button> */}
+              <Tooltip placement="top" title={'Export'}>
+                <ExportOutlined
+                  className={styles.Icon}
+                  onClick={() => {
+                    setOpenExportModal(true);
+                  }}
+                />
+              </Tooltip>
+
+              <Tooltip placement="top" title={'Delete'}>
+                <ConfirmationButton
+                  title="Delete machine Config"
+                  externalOpen={openDeleteModal}
+                  onExternalClose={() => setOpenDeleteModal(false)}
+                  description="Are you sure you want to delete the selected processes?"
+                  onConfirm={() => deleteItems(selectedRowElements)}
+                  buttonProps={{
+                    icon: <DeleteOutlined />,
+                    type: 'text',
+                  }}
+                />
+              </Tooltip>
             </SelectionActions>
 
             {/*<span>
@@ -240,8 +454,56 @@ const ParentConfigList = ({
                 </Row>
           },
         }}*/
+        selectableColumns={{
+          setColumnTitles: (cols) => {
+            if (typeof cols === 'function')
+              cols = cols(selectedColumns.map((col: any) => col.name) as string[]);
+
+            addPreferences({ 'process-list-columns-desktop': cols });
+          },
+          selectedColumnTitles: selectedColumns.map((col: any) => col.name) as string[],
+          allColumnTitles: ['Name', 'Description', 'LastEdited', 'Type', 'Machine'],
+          columnProps: {
+            width: 'fit-content',
+            responsive: ['xl'],
+            render: (id, record) => (
+              <Row justify="space-evenly" className={styles.HoverableTableCell}>
+                {actionBarGenerator(record)}
+              </Row>
+            ),
+          },
+        }}
       />
       <AddUserControls name={'machineconfig-list'} />
+
+      <MachineConfigModal
+        open={openEditModal}
+        title={`Edit Process${selectedRowKeys.length > 1 ? 'es' : ''}`}
+        onCancel={() => setOpenEditModal(false)}
+        initialData={
+          editingItem
+            ? [
+                {
+                  id: editingItem.id,
+                  name: editingItem.name.value ?? '',
+                  description: editingItem.description.value ?? '',
+                },
+              ]
+            : []
+        }
+        onSubmit={handleEdit}
+      />
+      <MachineConfigModal
+        open={openCopyModal}
+        title={`Copy Machine Config${selectedRowKeys.length > 1 ? 'es' : ''}`}
+        onCancel={() => setOpenCopyModal(false)}
+        initialData={copySelection.map((config) => ({
+          name: `${config.name.value} (Copy)`,
+          description: config.description.value ?? '',
+          originalId: config.id,
+        }))}
+        onSubmit={handleCopy}
+      />
     </>
   );
 };
