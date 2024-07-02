@@ -7,7 +7,7 @@ import { Modal, Form, Input, App, Collapse, CollapseProps, Typography } from 'an
 import { UserError } from '@/lib/user-error';
 import { useAddControlCallback } from '@/lib/controls-store';
 
-type MachineConfigModalProps<T extends { name: string; description: string }> = {
+type MachineConfigModalProps<T extends { name: string; descriptionValue: string }> = {
   open: boolean;
   title: string;
   okText?: string;
@@ -16,7 +16,7 @@ type MachineConfigModalProps<T extends { name: string; description: string }> = 
   initialData?: T[];
 };
 
-const MachineConfigModal = <T extends { name: string; description: string }>({
+const MachineConfigModal = <T extends { name: string; descriptionValue: string }>({
   open,
   title,
   okText,
@@ -129,9 +129,11 @@ const MachineConfigInputs = ({ index }: MachineConfigInputsProps) => {
         <Input />
       </Form.Item>
       <Form.Item
-        name={[index, 'description']}
-        label="Configuration Description"
-        rules={[{ required: false, message: 'Please fill out the Configuration Description' }]}
+        name={[index, 'descriptionValue']}
+        label="Machine Configuration Description"
+        rules={[
+          { required: false, message: 'Please fill out the Machine Configuration Description' },
+        ]}
       >
         <Input.TextArea showCount rows={4} maxLength={150} />
       </Form.Item>

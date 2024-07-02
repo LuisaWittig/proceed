@@ -2,7 +2,17 @@
 
 import styles from '@/components/item-list-view.module.scss';
 
-import { Button, Grid, Dropdown, TableColumnsType, Tooltip, Form, Input, Row } from 'antd';
+import {
+  Button,
+  Grid,
+  Dropdown,
+  TableColumnsType,
+  Tooltip,
+  Form,
+  Input,
+  Row,
+  TableColumnType,
+} from 'antd';
 import { FileOutlined } from '@ant-design/icons';
 import { AiOutlinePlus } from 'react-icons/ai';
 import { useAbilityStore } from '@/lib/abilityStore';
@@ -10,7 +20,11 @@ import Bar from '@/components/bar';
 import SelectionActions from '@/components/selection-actions';
 import { useCallback, useState } from 'react';
 import { useColumnWidth } from '@/lib/useColumnWidth';
-import { MachineConfig, ParentConfigMetadata } from '@/lib/data/machine-config-schema';
+import {
+  MachineConfig,
+  ParentConfig,
+  ParentConfigMetadata,
+} from '@/lib/data/machine-config-schema';
 import useFuzySearch, { ReplaceKeysWithHighlighted } from '@/lib/useFuzySearch';
 import ElementList from '@/components/item-list-view';
 import { useRouter } from 'next/navigation';
@@ -34,18 +48,30 @@ import { useAddControlCallback } from '@/lib/controls-store';
 import ConfirmationButton from '@/components/confirmation-button';
 import { useUserPreferences } from '@/lib/user-preferences';
 import MachineConfigModal from '@/components/machine-config-modal';
+import { v4 } from 'uuid';
 
 type InputItem = ParentConfigMetadata;
 export type ParentConfigListConfigs = ReplaceKeysWithHighlighted<InputItem, 'name' | 'description'>;
 
+function folderAwareSort(
+  sortFunction: (a: ParentConfigListConfigs, b: ParentConfigListConfigs) => number,
+) {
+  const sorter: TableColumnType<ParentConfigListConfigs>['sorter'] = (a, b, sortOrder) => {
+    return sortFunction(a, b);
+  };
+  return sorter;
+}
+
 const ParentConfigList = ({
   data,
   params,
+  backendCreateParentConfig,
 }: {
   data: InputItem[];
   params: {
     environmentId: string;
   };
+  backendCreateParentConfig: Function;
 }) => {
   const originalConfigs = data;
   const router = useRouter();
@@ -190,20 +216,12 @@ const ParentConfigList = ({
     deleteItems(selectedRowElements).then((res) => {});
   }
 
-  async function copyProcesses(configs: MachineConfig[], spaceId: string) {
+  async function copyProcesses(configs: InputItem, spaceId: string) {
     try {
-      // Simulate an API call to copy the machine configurations.
-      const newConfigs = configs.map((config) => ({
-        ...config,
-        id: `copy-${Math.random().toString(36).substr(2, 9)}`, // Simulate new ID generation
-        name: `${config.name} (Copy)`,
-        createdOn: new Date().toISOString(),
-        lastEditedOn: new Date().toISOString(),
-        lastEditedBy: 'user-id', // Placeholder, adjust accordingly
-      }));
-
-      // Append new configs to the existing list
-      setConfigs((prevConfigs) => [...prevConfigs, ...newConfigs]);
+      const date = new Date().toISOString();
+      configs.createdOn = date;
+      configs.lastEdited = date;
+      backendCreateParentConfig(configs as ParentConfigMetadata, spaceId).then(() => {});
       return {};
     } catch (error) {
       return { error: new Error('Failed to copy processes') };
@@ -273,13 +291,13 @@ const ParentConfigList = ({
           </div>
         </SpaceLink>
       ),
-      // sorter: (a, b) => a.name.value.localeCompare(b.name.value),
+      sorter: (a, b) => a.name.value.localeCompare(b.name.value),
     },
     {
       title: 'Description',
       dataIndex: 'description',
       key: 'description',
-      // sorter: (a, b) => a.name.value.localeCompare(b.name.value),
+      sorter: (a, b) => a.name.value.localeCompare(b.name.value),
       render: (_, record) => (
         <SpaceLink
           // href={`/machine-config/${record.id}`}
@@ -306,6 +324,9 @@ const ParentConfigList = ({
       dataIndex: 'lastEdited',
       key: 'Last Edited',
       render: (date: Date) => generateDateString(date, true),
+      sorter: folderAwareSort(
+        (a, b) => new Date(b.createdOn).getTime() - new Date(a.createdOn).getTime(),
+      ),
       responsive: ['md'],
     },
     {
@@ -338,8 +359,14 @@ const ParentConfigList = ({
     'Favorites',
   ]);
 
-  const handleCopy = async (values: { name: string; description: string }[]) => {
-    const res = await copyProcesses(values, space.spaceId);
+  const handleCopy = async (values: { name: string; descriptionValue: string }[]) => {
+    const newConfig: InputItem = {
+      ...copySelection[0],
+      name: copySelection[0].name.value,
+      //description: copySelection[0].description.value,
+    };
+    if (newConfig.description) newConfig.description.value = values[0].descriptionValue;
+    const res = await copyProcesses(newConfig, space.spaceId);
     if (res?.error) {
       message.open({ type: 'error', content: res.error.message });
     } else {
@@ -499,7 +526,7 @@ const ParentConfigList = ({
         onCancel={() => setOpenCopyModal(false)}
         initialData={copySelection.map((config) => ({
           name: `${config.name.value} (Copy)`,
-          description: config.description.value ?? '',
+          descriptionValue: config.description?.value ?? '',
           originalId: config.id,
         }))}
         onSubmit={handleCopy}

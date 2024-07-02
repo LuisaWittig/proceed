@@ -4,7 +4,7 @@ import { ComponentProps } from 'react';
 import { Space } from 'antd';
 import { getCurrentEnvironment } from '@/components/auth';
 import { notFound } from 'next/navigation';
-import { getConfigurations } from '@/lib/data/legacy/machine-config';
+import { createParentConfig, getConfigurations } from '@/lib/data/legacy/machine-config';
 import { ParentConfigMetadata } from '@/lib/data/machine-config-schema';
 import ParentConfigList from './parent-config-list';
 export type ListItem = ParentConfigMetadata;
@@ -34,6 +34,7 @@ const MachineConfigPage = async ({
               environmentId: params.environmentId,
             }}
             data={folderContents}
+            backendCreateParentConfig={createParentConfig}
           />
         </Space>
       </Content>
