@@ -7,10 +7,11 @@ import {
   PlusOutlined,
   CheckOutlined,
   EditOutlined,
-  ArrowUpOutlined,
   EyeOutlined,
   ExportOutlined,
   CaretRightOutlined,
+  CopyOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -38,6 +39,8 @@ import Title from 'antd/es/typography/Title';
 import { ToolbarGroup } from '@/components/toolbar';
 import { spaceURL } from '@/lib/utils';
 import VersionCreationButton from '@/components/version-creation-button';
+import getConfigHeader from './config-header';
+import getAddButton from './add-button';
 
 type MachineDataViewProps = {
   configId: string;
@@ -115,18 +118,12 @@ export default function ConfigEditor(props: MachineDataViewProps) {
 
   const showMobileView = useMobileModeler();
 
-  const machConfigsHeader = (
-    <Space.Compact block size="small">
-      <Text>Machine Configurations</Text>
-      <Tooltip title="Add Machine Configuration">
-        <Button icon={<PlusOutlined />} type="text" style={{ margin: '0 16px' }} />
-      </Tooltip>
-    </Space.Compact>
-  );
-
-  const [position, setPosition] = useState('start');
+  const [position, setPosition] = useState('view');
+  const [editable, setEditable] = useState(false); //change back to false
   const onModeChange = (e: any) => {
     setPosition(e.target.value);
+    setEditable(e.target.value == 'edit');
+    router.refresh();
   };
 
   const { token } = theme.useToken();
@@ -137,6 +134,45 @@ export default function ConfigEditor(props: MachineDataViewProps) {
     border: 'none',
   };
 
+  //for target header and metadata header
+  const subHeaderDropdownItems = [
+    {
+      key: '1',
+      label: 'Custom Field',
+    },
+    {
+      key: '2',
+      label: 'Attachment',
+    },
+    {
+      key: '3',
+      label: 'Picture',
+    },
+    {
+      key: '4',
+      label: 'ID',
+    },
+    {
+      key: '5',
+      label: 'Owner',
+    },
+    {
+      key: '6',
+      label: 'Description',
+    },
+  ];
+
+  const configHeaderDropdownItems = [
+    {
+      key: '1',
+      label: 'Target Configuration',
+    },
+    {
+      key: '2',
+      label: 'Machine Configuration',
+    },
+  ];
+
   const updateItems = (panelStyle: {
     marginBottom: number;
     background: string;
@@ -146,13 +182,14 @@ export default function ConfigEditor(props: MachineDataViewProps) {
     let panels = [];
     panels.push({
       key: '1',
-      label: 'Metadata',
+      label: getConfigHeader('Metadata', subHeaderDropdownItems, editable, false),
       children: (
         <MetaData
           backendSaveMachineConfig={saveParentConfig}
           configId={configId}
           rootMachineConfig={parentConfig}
           selectedMachineConfig={props.selectedConfig}
+          editingEnabled={editable}
         />
       ),
       style: panelStyle,
@@ -160,15 +197,17 @@ export default function ConfigEditor(props: MachineDataViewProps) {
     if (editingConfig.type === 'config') {
       const currentConfig = editingConfig as ParentConfig;
       if (currentConfig.targetConfig) {
+        let title = 'Target Configuration: ' + currentConfig.targetConfig.name;
         panels.push({
           key: '2',
-          label: 'Target Configuration: ' + currentConfig.targetConfig.name,
+          label: getConfigHeader(title, subHeaderDropdownItems, editable),
           children: (
             <TargetConfiguration
               backendSaveParentConfig={saveParentConfig}
               configId={configId}
               parentConfig={parentConfig}
               selectedConfig={props.selectedConfig}
+              editingEnabled={editable}
             />
           ),
           style: panelStyle,
@@ -177,13 +216,14 @@ export default function ConfigEditor(props: MachineDataViewProps) {
       if (currentConfig.machineConfigs && currentConfig.machineConfigs.length > 0) {
         panels.push({
           key: '3',
-          label: machConfigsHeader,
+          label: getConfigHeader('Machine Configurations', [], editable, false),
           children: (
             <MachineConfigurations
               backendSaveParentConfig={saveParentConfig}
               configId={configId}
               parentConfig={parentConfig}
-              selectedCofig={props.selectedConfig}
+              selectedConfig={props.selectedConfig}
+              editingEnabled={editable}
             />
           ),
           style: panelStyle,
@@ -230,7 +270,7 @@ export default function ConfigEditor(props: MachineDataViewProps) {
                 {name}
               </Title>
             </div>
-            <ToolbarGroup>
+            <Space.Compact>
               <Select
                 popupMatchSelectWidth={false}
                 placeholder="Select Version"
@@ -261,7 +301,7 @@ export default function ConfigEditor(props: MachineDataViewProps) {
                     label: name,
                   }))}
               />
-              {!showMobileView && (
+              {!showMobileView && editable && (
                 <>
                   <Tooltip title="Create New Version">
                     <VersionCreationButton
@@ -269,16 +309,16 @@ export default function ConfigEditor(props: MachineDataViewProps) {
                       createVersion={createConfigVersion}
                     ></VersionCreationButton>
                   </Tooltip>
-                  <Tooltip title="Back to Parent">
-                    <Button icon={<ArrowUpOutlined />} disabled={true} />
-                  </Tooltip>
                 </>
               )}
-            </ToolbarGroup>
+            </Space.Compact>
+          </Space>
+          <Space>
+            {editable && getAddButton('Add Child Configuration', configHeaderDropdownItems)}
           </Space>
           <Space>
             <Radio.Group value={position} onChange={onModeChange}>
-              <Radio.Button value="start">
+              <Radio.Button value="view">
                 View{' '}
                 <EyeOutlined
                   style={{
@@ -286,7 +326,7 @@ export default function ConfigEditor(props: MachineDataViewProps) {
                   }}
                 />
               </Radio.Button>
-              <Radio.Button value="end">
+              <Radio.Button value="edit">
                 Edit{' '}
                 <EditOutlined
                   style={{
@@ -318,7 +358,7 @@ export default function ConfigEditor(props: MachineDataViewProps) {
       >
         <Collapse
           bordered={false}
-          defaultActiveKey={['1']}
+          defaultActiveKey={['1', '2', '3']}
           expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
           style={{
             background: token.colorBgContainer,

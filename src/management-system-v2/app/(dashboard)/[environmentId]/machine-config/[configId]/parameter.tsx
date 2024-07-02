@@ -5,22 +5,16 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import {
   PlusOutlined,
-  MinusOutlined,
   EditOutlined,
-  KeyOutlined,
-  UserOutlined,
   DeleteOutlined,
   CopyOutlined,
   CaretRightOutlined,
-  DownOutlined,
-  CheckOutlined,
 } from '@ant-design/icons';
 import { useEffect, useRef, useState } from 'react';
 import {
   Button,
   Input,
   Dropdown,
-  Select,
   Space,
   Col,
   Row,
@@ -28,7 +22,6 @@ import {
   Tooltip,
   Collapse,
   theme,
-  Card,
   Flex,
 } from 'antd';
 import { spaceURL } from '@/lib/utils';
@@ -36,12 +29,14 @@ import useMobileModeler from '@/lib/useMobileModeler';
 import { useEnvironment } from '@/components/auth-can';
 import { TreeFindStruct, defaultConfiguration, findConfig } from './machine-tree-view';
 import Text from 'antd/es/typography/Text';
+import getAddButton from './add-button';
 
 type MachineDataViewProps = {
   configId: string;
   selectedConfig: TreeFindStruct;
   parentConfig: ParentConfig;
   backendSaveParentConfig: Function;
+  editingEnabled: boolean;
 };
 
 const LATEST_VERSION = { version: -1, name: 'Latest Version', description: '' };
@@ -70,6 +65,8 @@ export default function Parameters(props: MachineDataViewProps) {
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+
+  const editable = props.editingEnabled;
 
   const changeNestedParameter = (index: number, key: string, value: string) => {
     const newNestedParameters = [...nestedParameters];
@@ -104,137 +101,29 @@ export default function Parameters(props: MachineDataViewProps) {
 
   const showMobileView = useMobileModeler();
 
-  const toggleEditingName = () => {
-    // if (editingName) {
-    //   saveMachineConfig(configId, rootMachineConfig).then(() => {});
-    // }
-    setEditingName(!editingName);
-  };
-
-  // const parameterContent = (
-  //   <div>
-  //     <Row gutter={[24, 24]} style={{ margin: '16px 0' }}>
-  //       <Col span={2} className="gutter-row">
-  //         {' '}
-  //         Parameters{' '}
-  //       </Col>
-  //       <Col span={22} className="gutter-row">
-  //         <Card>
-  //           <Button
-  //             icon={<PlusOutlined />}
-  //             type="dashed"
-  //             style={{ width: '100%', marginBottom: 16 }}
-  //             onClick={addNestedParameter}
-  //           >
-  //             Add Parameter
-  //           </Button>
-  //           {nestedParameters.map((param, i) => (
-  //             <Card
-  //               key={i}
-  //               type="inner"
-  //               title={`Nested Parameter ${i + 1}`}
-  //               extra={
-  //                 <Button
-  //                   icon={<MinusOutlined />}
-  //                   type="dashed"
-  //                   onClick={() => removeNestedParameter(i)}
-  //                 />
-  //               }
-  //               style={{ marginBottom: 16 }}
-  //             >
-  //               <Row gutter={16} style={{ marginBottom: 16 }}>
-  //                 <Col span={6}>
-  //                   <Input
-  //                     placeholder="Key"
-  //                     value={param.key}
-  //                     onChange={(e) => changeNestedParameter(i, 'key', e.target.value)}
-  //                     onBlur={saveParameters}
-  //                   />
-  //                 </Col>
-  //                 <Col span={6}>
-  //                   <Input
-  //                     placeholder="Value"
-  //                     value={param.value}
-  //                     onChange={(e) => changeNestedParameter(i, 'value', e.target.value)}
-  //                     onBlur={saveParameters}
-  //                   />
-  //                 </Col>
-  //                 <Col span={6}>
-  //                   <Input
-  //                     placeholder="Unit"
-  //                     value={param.unit}
-  //                     onChange={(e) => changeNestedParameter(i, 'unit', e.target.value)}
-  //                     onBlur={saveParameters}
-  //                   />
-  //                 </Col>
-  //                 <Col span={6}>
-  //                   <Input
-  //                     placeholder="Language"
-  //                     value={param.language}
-  //                     onChange={(e) => changeNestedParameter(i, 'language', e.target.value)}
-  //                     onBlur={saveParameters}
-  //                   />
-  //                 </Col>
-  //               </Row>
-  //               <Row gutter={16} style={{ marginBottom: 16 }}>
-  //                 <Col span={24}>
-  //                   <Space>
-  //                     <Tag color="purple">Key XY</Tag>
-  //                     <Tag color="blue">Key AB</Tag>
-  //                     <Button icon={<PlusOutlined />} type="dashed" />
-  //                   </Space>
-  //                 </Col>
-  //               </Row>
-  //             </Card>
-  //           ))}
-  //         </Card>
-  //       </Col>
-  //     </Row>
-  //   </div>
-  // );
-
-  const parametersHeader = (
-    <Space.Compact block size="small">
-      <Text>Parameters</Text>
-      <Tooltip title="Add Parameter">
-        <Button icon={<PlusOutlined />} type="text" style={{ margin: '0 16px' }} />
-      </Tooltip>
-    </Space.Compact>
-  );
-
-  //change to make it reusable instead
-  const linkedParametersHeader = (
-    <Space.Compact block size="small">
-      <Text>Linked Parameters</Text>
-      <Tooltip title="Add Parameter">
-        <Button icon={<PlusOutlined />} type="text" style={{ margin: '0 16px' }} />
-      </Tooltip>
-    </Space.Compact>
-  );
-
-  //change to make it reusable instead
-  const nestedParametersHeader = (
-    <Space.Compact block size="small">
-      <Text>Nested Parameters</Text>
-      <Tooltip title="Add Parameter">
-        <Button icon={<PlusOutlined />} type="text" style={{ margin: '0 16px' }} />
-      </Tooltip>
-    </Space.Compact>
-  );
-
   const parameterItemHeader = (parameter: ConfigParameter) => (
     <Space.Compact block size="small">
       <Flex align="center" justify="space-between" style={{ width: '100%' }}>
-        <Text>{parameter.key}</Text>
+        <Space>
+          <Text>{parameter.key}: </Text>
+          <Text>{parameter.value}</Text>
+          <Text>{parameter.unit}</Text>
+          <Text type="secondary">({parameter.language})</Text>
+        </Space>
         <Space align="center">
           <Tooltip title="Copy">
-            <Button icon={<CopyOutlined />} type="text" style={{ margin: '0 16px' }} />
+            <Button icon={<CopyOutlined />} type="text" style={{ margin: '0 10px' }} />
           </Tooltip>
           <Tooltip title="Edit">
-            <Button icon={<EditOutlined />} type="text" style={{ margin: '0 16px' }} />
+            <Button icon={<EditOutlined />} type="text" style={{ margin: '0 10px' }} />
           </Tooltip>
           <Tooltip title="Delete">
-            <Button icon={<DeleteOutlined />} type="text" style={{ margin: '0 16px' }} />
+            <Button
+              disabled={!editable}
+              icon={<DeleteOutlined />}
+              type="text"
+              style={{ margin: '0 10px' }}
+            />
           </Tooltip>
         </Space>
       </Flex>
@@ -243,164 +132,117 @@ export default function Parameters(props: MachineDataViewProps) {
 
   const { token } = theme.useToken();
   const panelStyle = {
-    marginBottom: 24,
-    background: token.colorFillAlter,
-    borderRadius: token.borderRadiusLG,
-    border: 'none',
-  };
-  const nestedPanelStyle = {
     margin: '0 0 16px 0',
     background: token.colorFillAlter,
     borderRadius: token.borderRadiusLG,
-    border: 'none',
+    border: 'solid 1px #d9d9d9',
   };
 
-  const items = [
-    {
-      key: '1',
-      label: 'Value',
-    },
-    {
-      key: '2',
-      label: 'Unit',
-    },
-    {
-      key: '3',
-      label: 'Language',
-    },
-  ];
-
-  const linkedParameters = [
-    {
-      key: '1',
-      label: linkedParametersHeader,
-      children: [
-        <div>
-          <Row gutter={16} style={{ margin: 16 }}>
-            <Col span={24}>
-              <Space>
-                <Tag color="purple">Key XY</Tag>
-                <Tag color="blue">Key AB</Tag>
-              </Space>
-            </Col>
-          </Row>{' '}
-        </div>,
-      ],
-      style: nestedPanelStyle,
-    },
-  ];
-  // const nestedParameters = [
-  //   {
-  //     key: '1',
-  //     label: nestedParametersHeader,
-  //     children: [],
-  //     style: nestedPanelStyle,
-  //   },
-  // ];
+  const getNestedParameters = (nestedParameters: ConfigParameter[] = []) => {
+    if (nestedParameters && nestedParameters.length > 0) {
+      return (
+        <Collapse
+          bordered={false}
+          expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
+          items={nestedParameters}
+        />
+      );
+    }
+    return getAddButton('Add Nested Parameter');
+  };
 
   const parameterContent = (parameter: ConfigParameter) => (
     <div>
-      <Row gutter={[24, 24]} style={{ margin: '16px 0' }}>
-        <Col span={2} className="gutter-row">
+      <Row gutter={[24, 24]} style={{ margin: '10px 0' }}>
+        <Col span={3} className="gutter-row">
           {' '}
           Key{' '}
         </Col>
-        <Col span={21} className="gutter-row">
-          <Input value={parameter.key} />
+        <Col span={20} className="gutter-row">
+          <Input disabled={!editable} value={parameter.key} />
         </Col>
       </Row>
-      <Row gutter={[24, 24]} style={{ margin: '16px 0' }}>
-        <Col span={2} className="gutter-row">
+      <Row gutter={[24, 24]} style={{ margin: '10px 0' }}>
+        <Col span={3} className="gutter-row">
           {' '}
           Value{' '}
         </Col>
-        <Col span={21} className="gutter-row">
-          <Input value={parameter.value} />
+        <Col span={20} className="gutter-row">
+          <Input disabled={!editable} value={parameter.value} />
         </Col>
         <Col span={1} className="gutter-row">
           <Tooltip title="Delete">
-            <Button icon={<DeleteOutlined />} type="text" />
+            <Button disabled={!editable} icon={<DeleteOutlined />} type="text" />
           </Tooltip>
         </Col>
       </Row>
-      <Row gutter={[24, 24]} style={{ margin: '16px 0' }}>
-        <Col span={2} className="gutter-row">
+      <Row gutter={[24, 24]} style={{ margin: '10px 0' }}>
+        <Col span={3} className="gutter-row">
           {' '}
           Unit{' '}
         </Col>
-        <Col span={21} className="gutter-row">
-          <Input value={parameter.unit} />
+        <Col span={20} className="gutter-row">
+          <Input disabled={!editable} value={parameter.unit} />
         </Col>
         <Col span={1} className="gutter-row">
           <Tooltip title="Delete">
-            <Button icon={<DeleteOutlined />} type="text" />
+            <Button disabled={!editable} icon={<DeleteOutlined />} type="text" />
           </Tooltip>
         </Col>
       </Row>
-      <Row gutter={[24, 24]} style={{ margin: '16px 0' }}>
-        <Col span={2} className="gutter-row">
+      <Row gutter={[24, 24]} style={{ margin: '10px 0' }}>
+        <Col span={3} className="gutter-row">
           {' '}
           Language{' '}
         </Col>
-        <Col span={21} className="gutter-row">
-          <Input value={parameter.language} />
+        <Col span={20} className="gutter-row">
+          <Input disabled={!editable} value={parameter.language} />
         </Col>
         <Col span={1} className="gutter-row">
           <Tooltip title="Delete">
-            <Button icon={<DeleteOutlined />} type="text" />
+            <Button disabled={!editable} icon={<DeleteOutlined />} type="text" />
           </Tooltip>
         </Col>
       </Row>
-      <Row gutter={[24, 24]} style={{ margin: '16px 0' }}>
-        <Col span={23} className="gutter-row">
-          <Collapse
-            bordered={false}
-            expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
-            style={{
-              background: 'none',
-            }}
-            items={linkedParameters}
-          />
+      <Row gutter={[24, 24]} style={{ margin: '10px 0' }}>
+        <Col span={3} className="gutter-row">
+          Linked Parameters
+        </Col>
+        <Col span={20} className="gutter-row">
+          <Space>
+            <Tag color="purple">Key XY</Tag>
+            <Tag color="blue">Key AB</Tag>
+            <Tooltip title="Add Parameter Link">
+              <Button disabled={!editable} icon={<PlusOutlined />} size="small" />
+            </Tooltip>
+          </Space>
         </Col>
         <Col span={1} className="gutter-row">
           <Tooltip title="Delete">
-            <Button icon={<DeleteOutlined />} type="text" />
+            <Button disabled={!editable} icon={<DeleteOutlined />} type="text" />
           </Tooltip>
         </Col>
       </Row>
-      <Row gutter={[24, 24]} style={{ margin: '16px 0' }}>
-        <Col span={23} className="gutter-row">
-          <Collapse
-            bordered={false}
-            expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
-            style={{
-              background: 'none',
-            }}
-            items={nestedParameters}
-          />
+      <Row gutter={[24, 24]} style={{ margin: '10px 0' }}>
+        <Col span={3} className="gutter-row">
+          Nested Parameters
+        </Col>
+        <Col span={20} className="gutter-row">
+          {getNestedParameters(nestedParameters)}
+          {editable && (
+            <Space style={{ margin: '10px 0 0 0' }}>{getAddButton('Add Nested Parameter')}</Space>
+          )}
         </Col>
         <Col span={1} className="gutter-row">
           <Tooltip title="Delete">
-            <Button icon={<DeleteOutlined />} type="text" />
+            <Button disabled={!editable} icon={<DeleteOutlined />} type="text" />
           </Tooltip>
-        </Col>
-      </Row>
-      <Row gutter={[24, 24]} style={{ margin: '16px 0' }} justify="start">
-        <Col span={2} className="gutter-row">
-          <Dropdown menu={{ items }}>
-            <Button>
-              <Space>
-                Add
-                <DownOutlined />
-              </Space>
-            </Button>
-          </Dropdown>
         </Col>
       </Row>
     </div>
   );
 
-  const getParametersItems = (): any => {
+  const getParameterItems = (): any => {
     let list = [];
     for (let parameter of editingConfig.parameters) {
       list.push({
@@ -413,39 +255,15 @@ export default function Parameters(props: MachineDataViewProps) {
     return list;
   };
 
-  const getItems = (panelStyle: {
-    marginBottom: number;
-    background: string;
-    borderRadius: number;
-    border: string;
-  }) => [
-    {
-      key: '1',
-      label: parametersHeader,
-      children: (
-        <Collapse
-          bordered={false}
-          expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
-          style={{
-            background: 'none',
-          }}
-          items={getParametersItems()}
-        />
-      ),
-      style: panelStyle,
-    },
-  ];
-
   return (
-    <div>
+    <>
       <Collapse
-        bordered={false}
         expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
-        style={{
-          background: token.colorBgContainer,
-        }}
-        items={getItems(panelStyle)}
+        ghost
+        size="small"
+        items={getParameterItems()}
       />
-    </div>
+      {editable && <Space>{getAddButton('Add Parameter')}</Space>}
+    </>
   );
 }

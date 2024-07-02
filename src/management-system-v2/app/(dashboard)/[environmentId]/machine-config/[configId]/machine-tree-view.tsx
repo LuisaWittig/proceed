@@ -37,10 +37,10 @@ export function defaultConfiguration(): AbstractConfig {
     id: v4(),
     type: 'config',
     environmentId: '',
-    owner: { label: 'owner', value: '' },
-    picture: { label: 'picture', value: '' },
+    owner: { label: 'Owner', value: '' },
+    picture: { label: 'Picture', value: '' },
     name: 'Default Machine Configuration',
-    description: { label: 'description', value: '' },
+    description: { label: 'Description', value: '' },
     variables: [],
     customFields: [],
     parameters: [],
@@ -383,6 +383,7 @@ export default function ConfigurationTreeView(props: ConfigurationTreeViewProps)
     setTreeData(configArray);
   };
 
+  //TODO: Put this in a separate file
   const createTarget = () => {
     // We can only have one target configuration
     if (parentConfig.targetConfig) return;
@@ -390,7 +391,7 @@ export default function ConfigurationTreeView(props: ConfigurationTreeViewProps)
     foundMachine.targetConfig = {
       ...defaultConfiguration(),
       name: name,
-      description: { label: 'description', value: description },
+      description: { label: 'Description', value: description },
       type: 'target-config',
       owner: foundMachine.owner,
       environmentId: foundMachine.environmentId,
@@ -402,8 +403,8 @@ export default function ConfigurationTreeView(props: ConfigurationTreeViewProps)
     parentConfig.machineConfigs.push({
       ...defaultConfiguration(),
       name: name,
-      description: { label: 'description', value: description },
-      machine: { label: 'machine', value: '' },
+      description: { label: 'Description', value: description },
+      machine: { label: 'Machine', value: '' },
       type: 'machine-config',
       owner: parentConfig.owner,
       environmentId: parentConfig.environmentId,
@@ -503,7 +504,7 @@ export default function ConfigurationTreeView(props: ConfigurationTreeViewProps)
     ) {
       return [
         {
-          label: 'Create parameter',
+          label: 'Create Parameter',
           key: 'add_parameter',
           onClick: showCreateParameterModal,
         },

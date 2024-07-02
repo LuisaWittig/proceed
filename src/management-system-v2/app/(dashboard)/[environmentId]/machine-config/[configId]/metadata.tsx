@@ -12,11 +12,14 @@ import useMobileModeler from '@/lib/useMobileModeler';
 import { useEnvironment } from '@/components/auth-can';
 import { TreeFindStruct, defaultConfiguration, findConfig } from './machine-tree-view';
 
+//TODO: make this reusable for the target and machine configurations?
+
 type MachineDataViewProps = {
   configId: string;
   selectedMachineConfig: TreeFindStruct;
   rootMachineConfig: ParentConfig;
   backendSaveMachineConfig: Function;
+  editingEnabled: boolean;
 };
 
 const LATEST_VERSION = { version: -1, name: 'Latest Version', description: '' };
@@ -63,32 +66,7 @@ export default function MetaData(props: MachineDataViewProps) {
 
   const showMobileView = useMobileModeler();
 
-  const items = [
-    {
-      key: '1',
-      label: 'Custom Field',
-    },
-    {
-      key: '2',
-      label: 'Attachment',
-    },
-    {
-      key: '3',
-      label: 'Picture',
-    },
-    {
-      key: '4',
-      label: 'ID',
-    },
-    {
-      key: '5',
-      label: 'Owner',
-    },
-    {
-      key: '6',
-      label: 'Description',
-    },
-  ];
+  const editable = props.editingEnabled;
 
   return (
     <div>
@@ -102,7 +80,7 @@ export default function MetaData(props: MachineDataViewProps) {
         </Col>
         <Col span={1} className="gutter-row">
           <Tooltip title="Delete">
-            <Button icon={<DeleteOutlined />} type="text" />
+            <Button disabled={!editable} icon={<DeleteOutlined />} type="text" />
           </Tooltip>
         </Col>
       </Row>
@@ -114,13 +92,13 @@ export default function MetaData(props: MachineDataViewProps) {
         <Col span={21} className="gutter-row">
           <Input
             value={editingMachineConfig.owner?.value?.split('|').pop()}
-            disabled
+            disabled={!editable}
             prefix={<UserOutlined />}
           />
         </Col>
         <Col span={1} className="gutter-row">
           <Tooltip title="Delete">
-            <Button icon={<DeleteOutlined />} type="text" />
+            <Button disabled={!editable} icon={<DeleteOutlined />} type="text" />
           </Tooltip>
         </Col>
       </Row>
@@ -130,24 +108,17 @@ export default function MetaData(props: MachineDataViewProps) {
           Description{' '}
         </Col>
         <Col span={21} className="gutter-row">
-          <TextArea value={description} onChange={changeDescription} onBlur={saveDescription} />
+          <TextArea
+            disabled={!editable}
+            value={description}
+            onChange={changeDescription}
+            onBlur={saveDescription}
+          />
         </Col>
         <Col span={1} className="gutter-row">
           <Tooltip title="Delete">
-            <Button icon={<DeleteOutlined />} type="text" />
+            <Button disabled={!editable} icon={<DeleteOutlined />} type="text" />
           </Tooltip>
-        </Col>
-      </Row>
-      <Row gutter={[24, 24]} style={{ margin: '16px 0' }} justify="start">
-        <Col span={2} className="gutter-row">
-          <Dropdown menu={{ items }}>
-            <Button>
-              <Space>
-                Add
-                <PlusOutlined />
-              </Space>
-            </Button>
-          </Dropdown>
         </Col>
       </Row>
     </div>

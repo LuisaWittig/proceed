@@ -12,31 +12,19 @@ import {
 } from '@ant-design/icons';
 import TextArea from 'antd/es/input/TextArea';
 import { useEffect, useRef, useState } from 'react';
-import {
-  Button,
-  Input,
-  Space,
-  Col,
-  Row,
-  Tag,
-  Tooltip,
-  Layout,
-  SelectProps,
-  Collapse,
-  theme,
-  Card,
-  Dropdown,
-} from 'antd';
+import { Button, Input, Space, Col, Row, Tooltip, Collapse, Dropdown, theme } from 'antd';
 import useMobileModeler from '@/lib/useMobileModeler';
 import { useEnvironment } from '@/components/auth-can';
 import { TreeFindStruct, defaultConfiguration, findConfig } from './machine-tree-view';
 import Parameters from './parameter';
+import getConfigHeader from './config-header';
 
 type MachineDataViewProps = {
   configId: string;
   selectedConfig: TreeFindStruct;
   parentConfig: ParentConfig;
   backendSaveParentConfig: Function;
+  editingEnabled: boolean;
 };
 
 const LATEST_VERSION = { version: -1, name: 'Latest Version', description: '' };
@@ -61,6 +49,8 @@ export default function MachineConfigurations(props: MachineDataViewProps) {
   }, [props.selectedConfig]);
 
   const showMobileView = useMobileModeler();
+
+  const editable = props.editingEnabled;
 
   const items = [
     {
@@ -105,7 +95,7 @@ export default function MachineConfigurations(props: MachineDataViewProps) {
         </Col>
         <Col span={1} className="gutter-row">
           <Tooltip title="Delete">
-            <Button icon={<DeleteOutlined />} type="text" />
+            <Button disabled={!editable} icon={<DeleteOutlined />} type="text" />
           </Tooltip>
         </Col>
       </Row>
@@ -114,11 +104,15 @@ export default function MachineConfigurations(props: MachineDataViewProps) {
           {machineConfigData.owner?.label}
         </Col>
         <Col span={21} className="gutter-row">
-          <Input disabled value={machineConfigData.owner?.value} prefix={<UserOutlined />} />
+          <Input
+            disabled={!editable}
+            value={machineConfigData.owner?.value}
+            prefix={<UserOutlined />}
+          />
         </Col>
         <Col span={1} className="gutter-row">
           <Tooltip title="Delete">
-            <Button icon={<DeleteOutlined />} type="text" />
+            <Button disabled={!editable} icon={<DeleteOutlined />} type="text" />
           </Tooltip>
         </Col>
       </Row>
@@ -127,33 +121,25 @@ export default function MachineConfigurations(props: MachineDataViewProps) {
           {machineConfigData.description?.label}
         </Col>
         <Col span={21} className="gutter-row">
-          <TextArea value={machineConfigData.description?.value} />
+          <TextArea disabled={!editable} value={machineConfigData.description?.value} />
         </Col>
         <Col span={1} className="gutter-row">
           <Tooltip title="Delete">
-            <Button icon={<DeleteOutlined />} type="text" />
+            <Button disabled={!editable} icon={<DeleteOutlined />} type="text" />
           </Tooltip>
         </Col>
       </Row>
-      <Row gutter={[24, 24]} style={{ margin: '16px 0' }} justify="start">
-        <Col span={2} className="gutter-row">
-          <Dropdown menu={{ items }}>
-            <Button>
-              <Space>
-                Add
-                <PlusOutlined />
-              </Space>
-            </Button>
-          </Dropdown>
-        </Col>
-      </Row>
       <Row gutter={[24, 24]} style={{ margin: '16px 0' }}>
-        <Col span={23} className="gutter-row">
+        <Col span={2} className="gutter-row">
+          Parameters
+        </Col>
+        <Col span={21} className="gutter-row">
           <Parameters
             backendSaveParentConfig={props.backendSaveParentConfig}
             configId={props.configId}
             parentConfig={parentConfig}
             selectedConfig={{ parent: parentConfig, selection: machineConfigData }}
+            editingEnabled={editable}
           />
         </Col>
       </Row>
@@ -178,7 +164,7 @@ export default function MachineConfigurations(props: MachineDataViewProps) {
     for (let machineConfig of parentConfig.machineConfigs) {
       list.push({
         key: machineConfig.id,
-        label: machineConfig.name,
+        label: getConfigHeader(machineConfig.name, items),
         children: [childConfigContent(machineConfig)],
         style: panelStyle,
       });
