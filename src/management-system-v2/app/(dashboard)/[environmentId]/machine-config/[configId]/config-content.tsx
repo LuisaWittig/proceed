@@ -1,20 +1,16 @@
 'use client';
 
 import { ParentConfig } from '@/lib/data/machine-config-schema';
-
-import {
-  MenuUnfoldOutlined,
-  MenuFoldOutlined,
-  ColumnWidthOutlined,
-  ExpandOutlined,
-} from '@ant-design/icons';
 import { useEffect, useState } from 'react';
-import { Button, Layout } from 'antd';
+import { Layout, Button } from 'antd';
+import { MenuUnfoldOutlined, MenuFoldOutlined } from '@ant-design/icons';
 import ConfigEditor from './config-editor';
 import ConfigurationTreeView, { TreeFindStruct } from './machine-tree-view';
 import { useRouter } from 'next/navigation';
 import { ResizableBox } from 'react-resizable';
 import 'react-resizable/css/styles.css';
+import './ConfigContent.css'; // Import CSS
+
 const { Sider } = Layout;
 
 type VariablesEditorProps = {
@@ -22,7 +18,9 @@ type VariablesEditorProps = {
   originalParentConfig: ParentConfig;
   backendSaveParentConfig: Function;
 };
+
 const initialWidth = 400; // Initial width
+const collapsedWidth = 70; // Width when collapsed
 
 export default function ConfigContent(props: VariablesEditorProps) {
   const [collapsed, setCollapsed] = useState(false);
@@ -56,36 +54,50 @@ export default function ConfigContent(props: VariablesEditorProps) {
       const newWidth = prevWidth + delta;
       const maxWidth = window.innerWidth / 2;
       const minWidth = 200;
+      if (newWidth > collapsedWidth) {
+        setCollapsed(false); // Expand the tree when width is greater than collapsed width
+      }
       return Math.min(Math.max(newWidth, minWidth), maxWidth);
     });
   };
 
   const handleCollapse = () => {
-    setWidth(initialWidth);
+    if (collapsed) {
+      setWidth(initialWidth);
+    } else {
+      setWidth(collapsedWidth);
+    }
+    setCollapsed(!collapsed);
   };
 
   return (
     <Layout style={{ height: '100vh', display: 'flex', flexDirection: 'row' }}>
       <ResizableBox
-        className="custom-box"
+        className="custom-box" // Apply custom styles
         width={width}
         height={Infinity}
         axis="x"
-        minConstraints={[200, 0]}
+        minConstraints={[collapsedWidth, 0]}
         maxConstraints={[window.innerWidth / 2, Infinity]}
+        resizeHandles={['e']}
         handle={
-          <ColumnWidthOutlined
+          <div
+            className="custom-handle"
             style={{
               position: 'absolute',
               top: 0,
               right: 0,
+              width: '8px',
+              height: '100%',
               cursor: 'col-resize',
+              zIndex: 1,
             }}
             onMouseDown={(e) => {
-              const startX = e.clientX;
-              const onMouseMove = (event: MouseEvent) => {
-                handleResize(event.clientX - startX);
-                e.clientX = event.clientX;
+              let startX = e.clientX;
+              const onMouseMove = (event) => {
+                const delta = event.clientX - startX;
+                handleResize(delta);
+                startX = event.clientX; // Update startX for the next delta calculation
               };
               const onMouseUp = () => {
                 document.removeEventListener('mousemove', onMouseMove);
@@ -95,9 +107,13 @@ export default function ConfigContent(props: VariablesEditorProps) {
               document.addEventListener('mouseup', onMouseUp);
             }}
           />
-        }
-        handleSize={[8, 8]}
-        resizeHandles={['e']}
+        } // Custom handle
+        onResize={(event, { size }) => {
+          setWidth(size.width);
+          if (size.width > collapsedWidth) {
+            setCollapsed(false); // Ensure tree is visible when expanded via handle
+          }
+        }}
         style={{
           border: '1px solid #ddd',
           padding: '0',
@@ -110,13 +126,24 @@ export default function ConfigContent(props: VariablesEditorProps) {
           height: '100vh',
         }}
       >
-        <ConfigurationTreeView
-          onUpdate={treeOnUpdate}
-          onSelectConfig={onSelectConfig}
-          backendSaveParentConfig={saveConfig}
-          configId={configId}
-          parentConfig={parentConfig}
-        />
+        <Button
+          type="default"
+          onClick={handleCollapse}
+          style={{ position: 'absolute', top: 10, right: 10, zIndex: 2 }}
+        >
+          {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+        </Button>
+        {!collapsed && (
+          <div className="content-wrapper">
+            <ConfigurationTreeView
+              onUpdate={treeOnUpdate}
+              onSelectConfig={onSelectConfig}
+              backendSaveParentConfig={saveConfig}
+              configId={configId}
+              parentConfig={parentConfig}
+            />
+          </div>
+        )}
       </ResizableBox>
 
       <ConfigEditor
@@ -124,7 +151,10 @@ export default function ConfigContent(props: VariablesEditorProps) {
         configId={configId}
         parentConfig={parentConfig}
         selectedConfig={selectedConfig}
-        style={{ marginLeft: collapsed ? `${width}px` : '0', transition: 'margin-left 0.3s ease' }}
+        style={{
+          marginLeft: collapsed ? `${collapsedWidth}px` : `${width}px`,
+          transition: 'margin-left 0.3s ease',
+        }}
       />
     </Layout>
   );

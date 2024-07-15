@@ -1,5 +1,5 @@
 'use client';
-
+import ResizableElement, { ResizableElementRefType } from '@/components/ResizableElement';
 import {
   ParentConfig,
   AbstractConfig,
@@ -20,6 +20,8 @@ import {
   DownOutlined,
   UpOutlined,
 } from '@ant-design/icons';
+import { FaFolderTree } from 'react-icons/fa6';
+
 type ConfigurationTreeViewProps = {
   configId: string;
   parentConfig: ParentConfig;
@@ -138,6 +140,7 @@ export default function ConfigurationTreeView(props: ConfigurationTreeViewProps)
   const parentConfig = { ...props.parentConfig };
   const saveParentConfig = props.backendSaveParentConfig;
   const configId = props.configId;
+  const resizableElementRef = useRef<ResizableElementRefType>(null);
 
   const firstRender = useRef(true);
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
@@ -555,13 +558,30 @@ export default function ConfigurationTreeView(props: ConfigurationTreeViewProps)
 
   return (
     <>
-      <div style={{ display: 'flex', gap: '8px', padding: '8px' }}>
-        <Tooltip title="Expand All">
-          <Button icon={<FullscreenOutlined />} onClick={expandAllNodes} />
-        </Tooltip>
-        <Tooltip title="Collapse All">
-          <Button icon={<FullscreenExitOutlined />} onClick={collapseAllNodes} />
-        </Tooltip>
+      <div style={{ position: 'relative', padding: '8px' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: '8px',
+            position: 'absolute',
+            top: 10,
+            right: 60,
+            zIndex: 2,
+          }}
+        >
+          <Button
+            type="primary"
+            onClick={() => {
+              if (expandedKeys.length === 0) {
+                expandAllNodes();
+              } else {
+                collapseAllNodes();
+              }
+            }}
+          >
+            <FaFolderTree />
+          </Button>
+        </div>
       </div>
       <Dropdown menu={{ items: mountContextMenu() }} trigger={['contextMenu']}>
         <Tree
