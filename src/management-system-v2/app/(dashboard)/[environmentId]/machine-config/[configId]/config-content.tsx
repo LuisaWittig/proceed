@@ -9,7 +9,7 @@ import ConfigurationTreeView, { TreeFindStruct } from './machine-tree-view';
 import { useRouter } from 'next/navigation';
 import { ResizableBox } from 'react-resizable';
 import 'react-resizable/css/styles.css';
-import './ConfigContent.css'; // Import CSS
+import './ConfigContent.css';
 
 const { Sider } = Layout;
 
@@ -31,9 +31,14 @@ export default function ConfigContent(props: VariablesEditorProps) {
   const configId = props.configId;
   const saveConfig = props.backendSaveParentConfig;
   const [parentConfig, setParentConfig] = useState<ParentConfig>(props.originalParentConfig);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setSelectedConfig({ parent: parentConfig, selection: parentConfig });
+  }, []);
+
+  useEffect(() => {
+    setIsClient(true);
   }, []);
 
   const onSelectConfig = (relation: TreeFindStruct) => {
@@ -47,15 +52,15 @@ export default function ConfigContent(props: VariablesEditorProps) {
     setParentConfig(editedConfig);
   };
 
-  const [width, setWidth] = useState(initialWidth); // Initial width
+  const [width, setWidth] = useState(initialWidth);
 
   const handleResize = (delta: number) => {
     setWidth((prevWidth) => {
       const newWidth = prevWidth + delta;
-      const maxWidth = window.innerWidth / 2;
+      const maxWidth = isClient ? window.innerWidth / 2 : initialWidth;
       const minWidth = 200;
       if (newWidth > collapsedWidth) {
-        setCollapsed(false); // Expand the tree when width is greater than collapsed width
+        setCollapsed(false);
       }
       return Math.min(Math.max(newWidth, minWidth), maxWidth);
     });
@@ -69,55 +74,61 @@ export default function ConfigContent(props: VariablesEditorProps) {
     }
     setCollapsed(!collapsed);
   };
-
+  if (!isClient) {
+    return null;
+  }
   return (
     <Layout style={{ height: '100vh', display: 'flex', flexDirection: 'row' }}>
       <ResizableBox
-        className="custom-box" // Apply custom styles
-        width={width}
+        className="custom-box"
+        width={collapsed ? collapsedWidth : width}
         height={Infinity}
         axis="x"
         minConstraints={[collapsedWidth, 0]}
         maxConstraints={[window.innerWidth / 2, Infinity]}
         resizeHandles={['e']}
         handle={
-          <div
-            className="custom-handle"
-            style={{
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              width: '8px',
-              height: '100%',
-              cursor: 'col-resize',
-              zIndex: 1,
-            }}
-            onMouseDown={(e) => {
-              let startX = e.clientX;
-              const onMouseMove = (event) => {
-                const delta = event.clientX - startX;
-                handleResize(delta);
-                startX = event.clientX; // Update startX for the next delta calculation
-              };
-              const onMouseUp = () => {
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
-              };
-              document.addEventListener('mousemove', onMouseMove);
-              document.addEventListener('mouseup', onMouseUp);
-            }}
-          />
-        } // Custom handle
-        onResize={(event, { size }) => {
+          !collapsed && (
+            <div
+              className="custom-handle"
+              style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: '8px',
+                height: '100%',
+                cursor: 'col-resize',
+                zIndex: 1,
+              }}
+              onMouseDown={(e) => {
+                let startX = e.clientX;
+                const onMouseMove = (event) => {
+                  const delta = event.clientX - startX;
+                  handleResize(delta);
+                  startX = event.clientX;
+                };
+                const onMouseUp = () => {
+                  document.removeEventListener('mousemove', onMouseMove);
+                  document.removeEventListener('mouseup', onMouseUp);
+                };
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+              }}
+            />
+          )
+        }
+        onResizeStop={(event, { size }) => {
           setWidth(size.width);
-          if (size.width > collapsedWidth) {
+          if (size.width <= collapsedWidth) {
+            setCollapsed(true); // Collapse when the width is less than or equal to collapsedWidth
+          } else {
             setCollapsed(false); // Ensure tree is visible when expanded via handle
           }
         }}
         style={{
-          border: '1px solid #ddd',
+          border: collapsed ? 'none' : '1px solid #ddd',
           padding: '0',
-          background: '#fff',
+          background: collapsed ? 'none' : '#fff',
           borderRadius: '8px',
           display: 'flex',
           flexDirection: 'column',
@@ -129,7 +140,12 @@ export default function ConfigContent(props: VariablesEditorProps) {
         <Button
           type="default"
           onClick={handleCollapse}
-          style={{ position: 'absolute', top: 10, right: 10, zIndex: 2 }}
+          style={{
+            position: 'absolute',
+            top: 10,
+            right: 10,
+            zIndex: 2,
+          }}
         >
           {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
         </Button>

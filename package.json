@@ -80,6 +80,7 @@
     "@open-wc/webpack-import-meta-loader": "0.4.7",
     "@playwright/test": "^1.30.0",
     "@types/jest": "^29.5.1",
+    "@types/react-resizable": "^3.0.8",
     "@userfrosting/merge-package-dependencies": "^1.2.0",
     "@vue/cli-plugin-typescript": "5.0.8",
     "babel-loader": "^8.0.6",

@@ -570,7 +570,7 @@ export default function ConfigurationTreeView(props: ConfigurationTreeViewProps)
           }}
         >
           <Button
-            type="primary"
+            type="default"
             onClick={() => {
               if (expandedKeys.length === 0) {
                 expandAllNodes();
